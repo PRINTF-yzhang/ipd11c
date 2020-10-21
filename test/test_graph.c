@@ -69,6 +69,7 @@ static void four_node_graph(void)
 // edges to every vertex u > v. Then, for each vertex v in turn, gets
 // v’s successors in an array of capacity M.
 static void test_get_successors(size_t const N, size_t const M)
+//M is the capacity that its trying to get the successors into
 {
     vertex_t out[M];
     graph_t g = graph_create(N);
@@ -82,13 +83,16 @@ static void test_get_successors(size_t const N, size_t const M)
     }
 
     for (size_t i = 0; i < N; ++i) {
+        //the number of successors it has
         size_t degree = N - i - 1;
         size_t needed = graph_get_successors(g, i, M, out);
 
         CHECK_SIZE( needed, degree );
 
+        //its not gonna use more space than it needs/ we give it
         size_t size = needed < M ? needed : M;
-
+        //the out is going to be filled with successors that we expect
+        // in descending order
         for (size_t j = 0; j < size; ++j)
             CHECK_SIZE( out[j], j + i + 1 );
     }

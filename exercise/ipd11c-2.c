@@ -2,6 +2,34 @@
 #include <libipd.h>
 #include <assert.h>
 
+static bool
+has_path_helper(const_graph_t g,
+                vertex_t curr,
+                vertex_t goal,
+                bool seen[graph_size(g)])
+{
+    if (curr == goal) {
+        return true;
+    }
+
+    if (seen[curr]) {
+        return false;
+    }
+
+    seen[curr] = true;
+
+    vertex_t g_size = graph_size(g);
+
+    for (vertex_t succ = 0; succ < g_size; ++succ) {
+        if (graph_has_edge(g, curr, succ) &&
+            has_path_helper(g, succ, goal, seen)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Determines whether there is a path from node `src` to node `dst`
 // whose length is `n` or fewer.
 //
@@ -11,10 +39,20 @@ bool graph_has_path_n(const_graph_t g,
                       vertex_t dst,
                       size_t n)
 {
-    // TODO: Make this return the correct answer for all possible
-    // arguments instead of just a few.
-    return src == dst
-           || (n >= 1 && graph_has_edge(g, src, dst));
+    if(src>n ||dst>n){
+        return false;
+    }
+    vertex_t g_size = graph_size(g);
+    assert( src < g_size );
+    assert( dst < g_size );
+
+    bool seen[g_size];
+
+    for (vertex_t v = 0; v < g_size; ++v) {
+        seen[v] = false;
+    }
+
+    return has_path_helper(g, src, dst, seen);
 }
 
 // Builds the graph 0 -> 1 -> ... -> (N-2) -> (N-1).
@@ -52,11 +90,37 @@ static void test_ghpn_3(void)
     graph_destroy(g3);
 }
 
+static void test_ghpn_4(void)
+{
+    graph_t g4  = build_linear_graph(4);
+
+
+    CHECK( ! graph_has_path_n(g4, 0, 3, 0) );
+    CHECK( ! graph_has_path_n(g4, 0, 3, 1) );
+    CHECK( graph_has_path_n(g4, 0, 3, 4) );
+    CHECK( graph_has_path_n(g4, 1, 3, 4) );
+
+    CHECK( ! graph_has_path_n(g4, 2, 0, 10) );
+
+    graph_destroy(g4);
+}
+
 static void test_ghpn_16(void)
 {
     graph_t g16 = graph_create(16);
+    graph_add_edge(g16, 0, 1);
+    graph_add_edge(g16, 1, 2);
+    graph_add_edge(g16, 2, 3);
+    graph_add_edge(g16, 3, 4);
+    graph_add_edge(g16, 4, 5);
+    graph_add_edge(g16, 5, 6);
+    CHECK( ! graph_has_path_n(g16, 0, 3, 0) );
+    CHECK( ! graph_has_path_n(g16, 0, 3, 1) );
+    CHECK( graph_has_path_n(g16, 0, 3, 11) );
+    CHECK( graph_has_path_n(g16, 1, 3, 11) );
 
-    // TODO: More checks here.
+    CHECK( ! graph_has_path_n(g16, 2, 0, 10) );
+    CHECK(  graph_has_path_n(g16, 0, 5, 16) );
 
     graph_destroy(g16);
 }
@@ -64,7 +128,7 @@ static void test_ghpn_16(void)
 int main(void)
 {
     test_ghpn_3();
+    test_ghpn_4();
     test_ghpn_16();
 
-    // TODO: At least one more test here -- something with a cycle!
 }
